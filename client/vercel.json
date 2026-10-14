@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://unisphere-backend-h5p9.onrender.com/api/:path*"
+    }
+  ]
+}

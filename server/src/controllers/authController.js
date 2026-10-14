@@ -15,7 +15,7 @@ const publicUser = user => ({
 });
 
 function cookieOptions() {
-  const sameSite = process.env.COOKIE_SAME_SITE || (process.env.NODE_ENV === "production" ? "none" : "lax");
+  const sameSite = process.env.COOKIE_SAME_SITE || "lax";
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -78,7 +78,7 @@ export async function login(request, response) {
 }
 
 export async function logout(_request, response) {
-  const sameSite = process.env.COOKIE_SAME_SITE || (process.env.NODE_ENV === "production" ? "none" : "lax");
+  const sameSite = process.env.COOKIE_SAME_SITE || "lax";
   response.clearCookie("pathway_session", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
