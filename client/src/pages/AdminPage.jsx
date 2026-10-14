@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDown, ArrowRight, ArrowUp, Ban, BookOpen, Check, Clapperboard, Layers3, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Ban, BookOpen, Check, Clapperboard, ExternalLink, Layers3, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { Link, NavLink, useParams } from "react-router-dom";
 import { useResource } from "../hooks/useResource.js";
 import api, { apiMessage } from "../services/api.js";
@@ -115,10 +115,26 @@ export function AdminContentPage() {
     {type === "users" ? <AdminUsersPage/> : <>
       {["lessons", "dsa-questions"].includes(type) ? <div className="admin-list-toolbar lesson-track-filter"><label htmlFor="lesson-track">Course</label><select id="lesson-track" value={roadmapFilter} onChange={event => setRoadmapFilter(event.target.value)}><option value="all">All courses</option>{typeOptions.roadmaps.map(roadmap => <option key={roadmap._id} value={roadmap._id}>{roadmap.title}</option>)}</select><input value={filter} onChange={event => setFilter(event.target.value)} placeholder={`Filter ${titleMap[type]?.toLowerCase()}…`} aria-label={`Filter ${titleMap[type]}`}/><span>{filteredItems.length} items</span></div> : <div className="admin-list-toolbar"><input value={filter} onChange={event => setFilter(event.target.value)} placeholder={`Filter ${titleMap[type]?.toLowerCase() || "content"}…`} aria-label={`Filter ${titleMap[type]}`}/><span>{filteredItems.length} items</span></div>}
       {optionsError && <ErrorState message={optionsError} retry={reloadOptions}/>}
-      {loading ? <Loading label={`Loading ${titleMap[type]?.toLowerCase()}…`}/> : loadError ? <ErrorState message={loadError} retry={reload}/> : filteredItems.length ? <div className="admin-content-list">{filteredItems.map((item, index) => <article className="admin-content-row" key={item._id}><span className="admin-order">{String(item.order ?? index).padStart(2, "0")}</span><div className="admin-content-main"><strong>{item.title}</strong><small>{["lessons", "dsa-questions"].includes(type) ? `${item.topicId?.roadmapId?.title || "Course"} / ${item.topicId?.title || "Topic"}` : item.topicId?.title || item.roadmapId?.title || item.slug} · {item.isPublished ? "Published" : "Draft"}{item.youtubeVideoId ? " · Lecture video" : ""}{item.problemUrl ? " · Related problem link" : ""}{type === "dsa-questions" ? " · DSA problem" : ""}</small></div><div className="admin-row-actions"><button type="button" aria-label={`Move ${item.title} up`} onClick={() => move(item, -1)}><ArrowUp size={14}/></button><button type="button" aria-label={`Move ${item.title} down`} onClick={() => move(item, 1)}><ArrowDown size={14}/></button><button type="button" aria-label={`Edit ${item.title}`} onClick={() => openEdit(item)}><Pencil size={14}/></button><button type="button" className="danger-action" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 size={14}/></button></div></article>)}</div> : <div className="empty-state"><h3>No {titleMap[type]?.toLowerCase()} yet.</h3><p>Add learning content here; changes will appear in the public roadmap.</p></div>}
+      {loading ? <Loading label={`Loading ${titleMap[type]?.toLowerCase()}…`}/> : loadError ? <ErrorState message={loadError} retry={reload}/> : filteredItems.length ? <div className="admin-content-list">{filteredItems.map((item, index) => {
+        const previewPath = getContentPreviewPath(type, item);
+        return <article className="admin-content-row" key={item._id}><span className="admin-order">{String(item.order ?? index).padStart(2, "0")}</span><div className="admin-content-main"><strong>{item.title}</strong><div className="admin-content-meta"><span className="admin-content-location">{["lessons", "dsa-questions"].includes(type) ? `${item.topicId?.roadmapId?.title || "Course"} / ${item.topicId?.title || "Topic"}` : item.topicId?.title || item.roadmapId?.title || item.slug}</span><span className={`admin-content-state ${item.isPublished ? "is-published" : ""}`}>{item.isPublished ? "Published" : "Draft"}</span>{item.youtubeVideoId && <span className="admin-content-badge video-badge">Video lesson</span>}{item.problemUrl && <span className="admin-content-badge link-badge">Problem link</span>}{type === "dsa-questions" && <span className="admin-content-badge question-badge">DSA problem</span>}</div>{["lessons", "topics"].includes(type) && item.description && <p className="admin-content-description">{item.description}</p>}</div><div className="admin-row-actions">{previewPath && item.isPublished && <Link className="admin-preview-link" to={previewPath} aria-label={`Preview ${item.title} as a learner`} title="View live content"><ExternalLink size={14}/></Link>}<button type="button" aria-label={`Move ${item.title} up`} onClick={() => move(item, -1)}><ArrowUp size={14}/></button><button type="button" aria-label={`Move ${item.title} down`} onClick={() => move(item, 1)}><ArrowDown size={14}/></button><button type="button" aria-label={`Edit ${item.title}`} onClick={() => openEdit(item)}><Pencil size={14}/></button><button type="button" className="danger-action" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 size={14}/></button></div></article>;
+      })}</div> : <div className="empty-state"><h3>No {titleMap[type]?.toLowerCase()} yet.</h3><p>Add learning content here; changes will appear in the public roadmap.</p></div>}
       {dialog && <ContentDialog title={titleMap[type]} dialog={dialog} setDialog={setDialog} onSubmit={submit} saving={saving} error={error} options={typeOptions} topics={parentTopics} optionsLoading={optionsLoading} type={type}/>}
     </>}
   </main>;
+}
+
+function getContentPreviewPath(type, item) {
+  if (type === "roadmaps") return item.slug ? `/${item.slug}` : "";
+  if (type === "topics") {
+    const roadmapSlug = item.roadmapId?.slug;
+    return roadmapSlug && item.slug ? `/${roadmapSlug}/${item.slug}` : "";
+  }
+  const topic = item.topicId;
+  const roadmapSlug = topic?.roadmapId?.slug;
+  if (!roadmapSlug || !topic?.slug) return "";
+  const topicPath = `/${roadmapSlug}/${topic.slug}`;
+  return type === "lessons" && item.slug ? `${topicPath}/${item.slug}` : topicPath;
 }
 
 function AdminNavigation() {

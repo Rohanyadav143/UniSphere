@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useLayoutEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { SiteLayout } from "./components/Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { Loading } from "./components/Feedback.jsx";
@@ -20,8 +20,16 @@ function Private({ children, admin = false, studentOnly = false }) {
   return <ProtectedRoute admin={admin} studentOnly={studentOnly}>{children}</ProtectedRoute>;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
-  return <div className="min-h-screen"><SiteLayout><Suspense fallback={<main className="page-shell"><Loading/></main>}><Routes>
+  return <div className="min-h-screen"><ScrollToTop/><SiteLayout><Suspense fallback={<main className="page-shell"><Loading/></main>}><Routes>
     <Route path="/" element={<HomePage/>}/>
     <Route path="/:roadmapSlug" element={<RoadmapPage/>}/>
     <Route path="/:roadmapSlug/:topicSlug" element={<TopicPage/>}/>

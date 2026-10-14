@@ -5,6 +5,7 @@ client/dist/
 client/.env
 server/.env
 .env
+.env.*
 .DS_Store
 coverage/
 *.log
