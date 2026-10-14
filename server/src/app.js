@@ -9,14 +9,26 @@ import adminRoutes from "./routes/adminRoutes.js";
 import { ApiError, errorHandler, notFound } from "./middleware/errors.js";
 
 const app = express();
-const configuredOrigins = (process.env.CLIENT_URL || "http://localhost:5173").split(",").map(origin => origin.trim()).filter(Boolean);
+function normalizeOrigin(origin) {
+  const url = new URL(origin);
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("CLIENT_URL entries must use HTTP or HTTPS.");
+  }
+  return url.origin;
+}
+
+const configuredOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map(origin => origin.trim())
+  .filter(Boolean)
+  .map(normalizeOrigin);
 const allowedOrigins = [...new Set([...configuredOrigins, "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"])];
 
 function isAllowedOrigin(origin) {
   if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
   try {
     const url = new URL(origin);
+    if (allowedOrigins.includes(url.origin)) return true;
     const isLocalDevHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
     const isViteDevPort = /^517\d*$/.test(url.port || "5173");
     return isLocalDevHost && isViteDevPort;
