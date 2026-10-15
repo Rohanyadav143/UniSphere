@@ -174,6 +174,7 @@ function renderInput(name, label, value, setValue, options, topics, creating = f
 }
 
 export function AdminUsersPage() {
+  useDocumentMeta("Student accounts", "Review student accounts and their learning progress.");
   return <main className="page-shell admin-page"><Breadcrumb parts={[{ label: "Admin studio", to: "/admin" }, { label: "Student accounts" }]}/><section className="admin-title-row"><div><div className="eyebrow">CONTENT & COMMUNITY</div><h1>Student accounts<span className="heading-period">.</span></h1></div></section><AdminNavigation/><AdminUsersList/></main>;
 }
 

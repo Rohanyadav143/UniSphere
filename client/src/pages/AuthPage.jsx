@@ -13,7 +13,12 @@ export default function AuthPage({ mode = "login" }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  useDocumentMeta(isSignup ? "Create your account" : "Log in", "Sign in to UniSphere to sync your learning progress across devices.");
+  useDocumentMeta(
+    isSignup ? "Create your account" : "Log in",
+    isSignup
+      ? "Create a UniSphere account to sync your MERN and DSA learning progress across devices."
+      : "Log in to UniSphere to continue your MERN and DSA learning and sync your progress."
+  );
   if (user) return <Navigate to={location.state?.from || (user.role === "admin" ? "/admin" : "/dashboard")} replace/>;
 
   async function handleSubmit(event) {

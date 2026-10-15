@@ -81,12 +81,43 @@ export function confirmAction(message, options = {}) {
 
 export function useDocumentMeta(title, description) {
   useEffect(() => {
-    document.title = title ? `${title} | UniSphere` : "UniSphere — Learn. Build. Grow.";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta && description) meta.content = description;
-    const canonical = document.querySelector('link[rel="canonical"]') || document.createElement("link");
-    canonical.rel = "canonical";
-    canonical.href = `${window.location.origin}${window.location.pathname}`;
-    if (!canonical.isConnected) document.head.append(canonical);
+    const pageTitle = title ? `${title} | UniSphere` : "UniSphere — Learn. Build. Grow.";
+    const pageDescription = description || "Explore structured learning paths, lessons, DSA practice, and progress tracking with UniSphere.";
+    const productionOrigin = "https://unisphere-frontend-delta.vercel.app";
+    const privatePage = /^\/(admin|dashboard|profile|login|signup)(\/|$)/.test(window.location.pathname)
+      || title === "Page not found";
+    document.title = pageTitle;
+
+    function setMeta(selector, attributes, content) {
+      let element = document.head.querySelector(selector);
+      if (!element) {
+        element = document.createElement("meta");
+        Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+        document.head.append(element);
+      }
+      element.content = content;
+    }
+
+    setMeta('meta[name="description"]', { name: "description" }, pageDescription);
+    setMeta('meta[name="robots"]', { name: "robots" }, privatePage ? "noindex,nofollow" : "index,follow");
+    setMeta('meta[property="og:title"]', { property: "og:title" }, pageTitle);
+    setMeta('meta[property="og:description"]', { property: "og:description" }, pageDescription);
+    setMeta('meta[property="og:url"]', { property: "og:url" }, privatePage ? `${productionOrigin}/` : `${productionOrigin}${window.location.pathname}`);
+    setMeta('meta[property="og:image"]', { property: "og:image" }, `${productionOrigin}/og-image.png`);
+    setMeta('meta[name="twitter:title"]', { name: "twitter:title" }, pageTitle);
+    setMeta('meta[name="twitter:description"]', { name: "twitter:description" }, pageDescription);
+    setMeta('meta[name="twitter:image"]', { name: "twitter:image" }, `${productionOrigin}/og-image.png`);
+
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    if (privatePage) {
+      canonical?.remove();
+    } else {
+      if (!canonical) {
+        canonical = document.createElement("link");
+        canonical.rel = "canonical";
+        document.head.append(canonical);
+      }
+      canonical.href = `${productionOrigin}${window.location.pathname}`;
+    }
   }, [title, description]);
 }

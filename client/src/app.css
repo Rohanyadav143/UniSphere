@@ -706,3 +706,83 @@ body {
 .confirm-icon.danger { color: var(--coral); background: color-mix(in srgb, var(--coral) 10%, transparent); }
 .Toastify__toast--success { border-color: color-mix(in srgb, var(--green) 46%, var(--border)); }
 .Toastify__progress-bar--success { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+
+:root {
+  --electric: #4f83dc;
+  --purple: #8272d6;
+  --coral: #d87583;
+  --mint: #48aa89;
+}
+:root[data-theme="light"] {
+  --electric: #3568ba;
+  --purple: #705bbd;
+  --coral: #b94e60;
+  --mint: #287d62;
+}
+.hero-section {
+  background:
+    radial-gradient(ellipse at 78% 18%, color-mix(in srgb, var(--purple) 18%, transparent), transparent 36%),
+    linear-gradient(120deg, color-mix(in srgb, var(--electric) 28%, var(--bg)), color-mix(in srgb, var(--purple) 15%, var(--bg)) 70%, var(--bg));
+}
+:root[data-theme="light"] .hero-section {
+  background:
+    radial-gradient(ellipse at 78% 18%, color-mix(in srgb, var(--purple) 10%, transparent), transparent 38%),
+    linear-gradient(120deg, color-mix(in srgb, var(--electric) 9%, var(--bg)), color-mix(in srgb, var(--purple) 6%, var(--bg)) 70%, var(--bg));
+}
+.desktop-nav a.active {
+  color: #fff;
+  background: var(--electric);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--electric) 20%, transparent);
+}
+.button-primary {
+  background: var(--electric);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--electric) 18%, transparent);
+}
+.button-primary:hover {
+  background: color-mix(in srgb, var(--electric) 88%, #fff);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--electric) 22%, transparent);
+}
+.hero-actions .button-primary, :root[data-theme="light"] .hero-actions .button-primary {
+  color: #172238;
+  background: #f2c96d;
+  box-shadow: 0 5px 16px rgba(25, 31, 53, .16);
+}
+.hero-actions .button-primary:hover { background: #f7d88e; }
+.progress-line > span { background: var(--electric); }
+.path-card, .topic-card, .curriculum-card, .feature-card, .how-card,
+.overview-card, .continue-card, .profile-card, .admin-course-card, .admin-link-card {
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--bg) 10%, transparent);
+}
+.path-card:hover, .topic-card:hover, .curriculum-card:hover, .feature-card:hover,
+.how-card:hover, .overview-card:hover, .continue-card:hover, .profile-card:hover,
+.admin-course-card:hover, .admin-link-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--electric) 34%, var(--border));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--bg) 16%, transparent);
+}
+.auth-card { border-image: none; border-top: 3px solid var(--electric); }
+.lesson-page .lesson-content > h1 {
+  background: none;
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+}
+.site-footer {
+  border-top-color: var(--border);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 74%, var(--bg));
+}
+.site-footer::before { background: color-mix(in srgb, var(--electric) 35%, var(--border)); }
+.site-footer .brand { color: var(--text); }
+.site-footer .footer-brand p, .site-footer .footer-bottom, .site-footer .footer-links a { color: var(--text-secondary); }
+.site-footer .footer-label { color: var(--electric); }
+.site-footer .footer-bottom { border-top-color: var(--border); }
+.site-footer .footer-links a:hover { color: var(--electric); }
+.site-footer .brand-mark { background: var(--electric); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
