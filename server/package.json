@@ -9,6 +9,7 @@
     "migrate:legacy-dsa": "node src/utils/migrateLegacyDsaLessons.js",
     "migrate:dynamic-courses": "node src/utils/migrateDynamicCourses.js",
     "seed": "node src/utils/seed.js",
+    "setup": "npm run migrate:legacy-dsa && npm run migrate:dynamic-courses && npm run seed",
     "test": "node --test"
   },
   "dependencies": {

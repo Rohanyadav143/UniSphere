@@ -1,100 +1,100 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import handler from "../api/[...path].js";
+import proxy from "../api/proxy.js";
 
-function createResponse() {
-  return {
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name.toLowerCase()] = value;
-    },
-    end(body) {
-      this.body = body.toString();
-    }
-  };
+function makeRequest(path, { method = "GET", headers = {}, body } = {}) {
+  const [route, ...queryParts] = path.split("&");
+  const query = new URLSearchParams({ path: route });
+  for (const part of queryParts) {
+    const [name, value] = part.split("=");
+    query.append(name, value);
+  }
+  return new Request(`https://unisphere-frontend-delta.vercel.app/api/proxy?${query}`, {
+    method,
+    headers,
+    body: ["GET", "HEAD"].includes(method) ? undefined : body
+  });
 }
 
-test("API proxy forwards same-origin cookie and returns host-only session cookies", async () => {
+test("Vercel proxy forwards API path, query, cookies and host-only session cookies", async () => {
   const originalFetch = globalThis.fetch;
-  let forwardedRequest;
+  let forwarded;
   globalThis.fetch = async (url, options) => {
-    forwardedRequest = { url, options };
-    return {
+    forwarded = { url, options };
+    return new Response('{"success":true}', {
       status: 200,
-      headers: {
-        get: name => name === "content-type" ? "application/json; charset=utf-8" : null,
-        getSetCookie: () => [
-          "unisphere_session=token; Domain=onrender.com; Path=/; HttpOnly; Secure; SameSite=None",
-          "pathway_session=; Domain=onrender.com; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None"
-        ]
-      },
-      arrayBuffer: async () => Buffer.from('{"success":true}')
-    };
+      headers: [
+        ["Content-Type", "application/json"],
+        ["Set-Cookie", "unisphere_session=token; Domain=onrender.com; Path=/; HttpOnly; Secure; SameSite=None"]
+      ]
+    });
   };
 
   try {
-    const response = createResponse();
-    await handler({
-      url: "/api/auth/me?fresh=1",
-      method: "GET",
-      headers: { host: "unisphere-frontend-delta.vercel.app", cookie: "unisphere_session=browser-token" }
-    }, response);
+    const response = await proxy.fetch(makeRequest("auth/me&course=mern", {
+      headers: {
+        cookie: "unisphere_session=browser-token",
+        origin: "https://unisphere-frontend-delta.vercel.app"
+      }
+    }));
 
-    assert.equal(forwardedRequest.url, "https://unisphere-backend-h5p9.onrender.com/api/auth/me?fresh=1");
-    assert.equal(forwardedRequest.options.headers.get("cookie"), "unisphere_session=browser-token");
-    assert.equal(response.statusCode, 200);
-    assert.match(response.headers["set-cookie"][0], /SameSite=Lax/);
-    assert.doesNotMatch(response.headers["set-cookie"][0], /Domain=/i);
-    assert.equal(response.headers["set-cookie"].length, 2);
-    assert.equal(response.headers["cache-control"], "private, no-store, max-age=0");
+    assert.equal(forwarded.url, "https://unisphere-backend-h5p9.onrender.com/api/auth/me?course=mern");
+    assert.equal(forwarded.options.headers.get("cookie"), "unisphere_session=browser-token");
+    assert.equal(forwarded.options.headers.get("origin"), "https://unisphere-frontend-delta.vercel.app");
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("set-cookie"), /SameSite=Lax/);
+    assert.doesNotMatch(response.headers.get("set-cookie"), /Domain=/i);
+    assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
 
-test("API proxy returns a clear 502 when the backend cannot be reached", async () => {
+test("Vercel proxy forwards JSON bodies to backend auth routes", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => { throw new Error("upstream unavailable"); };
+  let forwarded;
+  globalThis.fetch = async (url, options) => {
+    forwarded = { url, options };
+    return Response.json({ success: true });
+  };
+
+  try {
+    const response = await proxy.fetch(makeRequest("auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "learner@example.com", password: "private-password" })
+    }));
+    assert.equal(forwarded.url, "https://unisphere-backend-h5p9.onrender.com/api/auth/login");
+    assert.deepEqual(JSON.parse(new TextDecoder().decode(forwarded.options.body)), {
+      email: "learner@example.com",
+      password: "private-password"
+    });
+    assert.equal(response.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Vercel proxy rejects missing or unsafe forwarded API paths", async () => {
+  for (const path of ["", "../admin/users", "/auth/login"]) {
+    const request = new Request(`https://unisphere-frontend-delta.vercel.app/api/proxy?path=${encodeURIComponent(path)}`);
+    const response = await proxy.fetch(request);
+    assert.equal(response.status, 400);
+  }
+});
+
+test("Vercel proxy returns 502 when the backend cannot be reached", async () => {
+  const originalFetch = globalThis.fetch;
   const originalConsoleError = console.error;
+  globalThis.fetch = async () => { throw new Error("upstream unavailable"); };
   console.error = () => {};
 
   try {
-    const response = createResponse();
-    await handler({ url: "/api/roadmaps", method: "GET", headers: {} }, response);
-    assert.equal(response.statusCode, 502);
-    assert.match(response.body, /temporarily unavailable/);
+    const response = await proxy.fetch(makeRequest("roadmaps"));
+    assert.equal(response.status, 502);
+    assert.match(await response.text(), /temporarily unavailable/);
   } finally {
     globalThis.fetch = originalFetch;
     console.error = originalConsoleError;
-  }
-});
-
-test("API proxy forwards JSON login payloads to the authentication endpoint", async () => {
-  const originalFetch = globalThis.fetch;
-  let forwardedRequest;
-  globalThis.fetch = async (url, options) => {
-    forwardedRequest = { url, options };
-    return {
-      status: 200,
-      headers: { get: () => "application/json; charset=utf-8" },
-      arrayBuffer: async () => Buffer.from('{"success":true}')
-    };
-  };
-
-  try {
-    const response = createResponse();
-    await handler({
-      url: "/api/auth/login",
-      method: "POST",
-      headers: { host: "unisphere-frontend-delta.vercel.app", "content-type": "application/json" },
-      body: { email: "learner@example.com", password: "private-password" }
-    }, response);
-
-    assert.equal(forwardedRequest.url, "https://unisphere-backend-h5p9.onrender.com/api/auth/login");
-    assert.deepEqual(JSON.parse(forwardedRequest.options.body), { email: "learner@example.com", password: "private-password" });
-    assert.equal(forwardedRequest.options.headers.get("content-type"), "application/json");
-    assert.equal(response.statusCode, 200);
-  } finally {
-    globalThis.fetch = originalFetch;
   }
 });
