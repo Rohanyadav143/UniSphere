@@ -28,12 +28,18 @@ export function AuthProvider({ children }) {
     setError("");
     try {
       const guestProgress = loadGuestProgress();
-      const { data } = await api.post(`/auth/${mode}`, { ...values, guestProgress });
+      await api.post(`/auth/${mode}`, { ...values, guestProgress });
+      const { data } = await api.get("/auth/me");
+      if (!data.data.user) {
+        throw new Error("Your account was accepted, but this browser did not save the sign-in session. Please allow cookies for this site and try again.");
+      }
       setUser(data.data.user);
       try { localStorage.removeItem(GUEST_PROGRESS_KEY); } catch { /* The server has synced this snapshot. */ }
       return data.data.user;
     } catch (requestError) {
-      const message = apiMessage(requestError, "Unable to sign in right now.");
+      const message = requestError.response
+        ? apiMessage(requestError, "Unable to sign in right now.")
+        : requestError.message || "Unable to sign in right now.";
       setError(message);
       throw new Error(message);
     }

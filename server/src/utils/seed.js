@@ -7,6 +7,16 @@ import Topic from "../models/Topic.js";
 import Lesson from "../models/Lesson.js";
 import { slugify } from "./slug.js";
 import { youtubeIdFromUrl } from "./youtube.js";
+import { seedAdmin } from "./seedAdmin.js";
+
+const seedAdminEmail = process.env.SEED_ADMIN_EMAIL?.trim();
+const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
+if (Boolean(seedAdminEmail) !== Boolean(seedAdminPassword)) {
+  throw new Error("Set both SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD to seed an administrator.");
+}
+if (seedAdminPassword && seedAdminPassword.length < 10) {
+  throw new Error("SEED_ADMIN_PASSWORD must contain at least 10 characters.");
+}
 
 const mernTopics = [
   ["HTML", "Learn semantic structure and build accessible pages.", [["Your first HTML page", "Meet the building blocks behind every webpage.", "UB1O30fR-EE", "5 min"], ["Elements & attributes", "Understand tags, attributes, and how elements fit together.", "UB1O30fR-EE", "12 min"], ["Forms & semantic HTML", "Create accessible forms and give content meaning.", "UB1O30fR-EE", "18 min"]]],
@@ -93,16 +103,9 @@ try {
       else await upsertDsaLessons(topic, content);
     }
   }
-  if (process.env.SEED_ADMIN_EMAIL && process.env.SEED_ADMIN_PASSWORD) {
-    const email = process.env.SEED_ADMIN_EMAIL.toLowerCase();
-    if (!(await User.exists({ email }))) {
-      await User.create({
-        name: "UniSphere Admin",
-        email,
-        password: process.env.SEED_ADMIN_PASSWORD,
-        role: "admin"
-      });
-    }
+  if (seedAdminEmail && seedAdminPassword) {
+    await seedAdmin(User, seedAdminEmail, seedAdminPassword);
+    console.log("Administrator account created or updated.");
   }
   console.log("Roadmaps seeded successfully.");
 } finally {

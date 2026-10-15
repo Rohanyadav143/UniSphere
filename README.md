@@ -35,7 +35,7 @@ UniSphere is a MERN learning platform for public MERN Stack, DSA-with-Java, and 
 
    The dynamic-course migration removes the old unique course-type index so multiple general courses can be added. For a brand-new database, run only `npm run seed`.
 
-   To create the first administrator, set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `server/.env` before seeding. Signup requests always create student accounts; the admin role is never accepted from the client.
+   To create or reset the administrator, set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in the server environment, then run `npm run seed` against the same MongoDB database used by the API. This promotes an existing account with that email and resets its password to the configured seed password. Signup requests always create student accounts; the admin role is never accepted from the client. On Render, use the service Shell (or a one-time job with the same environment) to run `npm run seed`; setting these variables alone does not create the account.
    
    The migration preserves lesson IDs and progress, verifies the copy, and only then removes the old DSA collection.
 
