@@ -21,7 +21,7 @@ export default function HomePage() {
   const itemCount = roadmaps.reduce((sum, roadmap) => sum + (roadmap.topics || []).reduce((topicSum, topic) => topicSum + (topic.itemCount || 0), 0), 0);
 
   return <main>
-    <Hero roadmaps={roadmaps}/>
+    <Hero roadmaps={roadmaps} loading={loading} error={error}/>
     <section className="path-section section-wrap" id="roadmaps">
       <div className="section-heading"><div><div className="eyebrow">CHOOSE YOUR DIRECTION</div><h2>Learning paths. <span>One good place to start.</span></h2></div><p>Clear roadmaps with lessons and milestones to keep you moving.</p></div>
       {loading ? <Loading label="Loading learning paths…"/> : error ? <ErrorState message={error} retry={reload}/> : roadmaps.length ? <div className="path-grid">{roadmaps.map((roadmap, index) => <RoadmapCard key={roadmap._id} roadmap={roadmap} completed={completed} user={user} index={String(index + 1).padStart(2, "0")} kicker={roadmap.pathType || (roadmap.type === "dsa" ? "CORE CONCEPTS" : roadmap.type === "mern" ? "DEVELOPMENT" : "LEARNING PATH")} tagline={roadmap.description} icon={roadmap.type === "dsa" ? <Layers3/> : <Code2/>}/>)}</div> : <div className="empty-state compact-empty"><h3>New learning paths are on the way.</h3><p>Check back soon to explore the first course.</p></div>}
@@ -54,19 +54,22 @@ export default function HomePage() {
   </main>;
 }
 
-function Hero({ roadmaps = [] }) {
+function Hero({ roadmaps = [], loading = false, error }) {
   const featuredRoadmaps = roadmaps.slice(0, 2);
-  return <section className="hero-section"><div className="hero-inner"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-pulse"/>YOUR NEXT CHAPTER STARTS HERE</div>
-    <h1>Learn with focus.<br/>Build real skills.<br/><span>Grow your future.</span></h1>
-    <p className="hero-description">Structured learning paths you can shape around your goals — with focused lessons and progress tracking.</p>
+  return <section className="hero-section"><div className="hero-inner"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-pulse"/>LEARNING, WITH A CLEAR NEXT STEP</div>
+    <h1>Build skills.<br/>One thoughtful step <span>at a time.</span></h1>
+    <p className="hero-description">Explore focused learning paths for web development and problem solving, and keep track of what you learn.</p>
     <div className="hero-actions">{featuredRoadmaps.map((roadmap, index) => <Link className={`button ${index === 0 ? "button-primary" : "button-secondary"}`} to={`/${roadmap.slug}`} key={roadmap._id}>{index === 0 ? "Start learning" : roadmap.title} <ArrowRight size={15}/></Link>)}{!featuredRoadmaps.length && <Link className="button button-primary" to="/#roadmaps">Explore courses <ArrowRight size={15}/></Link>}</div>
     <div className="hero-proof"><span className="hero-proof-mark"><CheckCircle2 size={15}/></span><span>Self-paced lessons <i/> Progress tracking <i/> Your learning, your pace</span></div>
-  </div><div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-glow"/>
-    <div className="code-window"><div className="code-window-top"><span className="window-dots"><i/><i/><i/></span><span>your-next-step.js</span><span className="window-status">● learning</span></div>
-      <div className="code-content"><div><span className="code-number">01</span><span className="syntax-muted">const</span> <span className="syntax-blue">journey</span> = {"{"}</div><div className="code-indent"><span className="syntax-purple">path</span>: <span className="syntax-green">'a skill worth building'</span>,</div><div className="code-indent"><span className="syntax-purple">next</span>: <span className="syntax-green">'one lesson at a time'</span>,</div><div className="code-indent"><span className="syntax-purple">progress</span>: <span className="syntax-amber">one step</span></div><div>{"};"}</div><div className="code-spacer"/><div><span className="syntax-muted">while</span> (curious) {"{"}</div><div className="code-indent"><span className="syntax-blue">learn</span>(); <span className="syntax-blue">build</span>(); <span className="syntax-blue">repeat</span>();</div><div>{"}"}</div></div>
-      <div className="art-progress"><div className="art-progress-icon">↗</div><div className="art-progress-copy"><b>One lesson at a time</b><span>A clear next step for your journey</span></div><span className="art-progress-arrow">↗</span></div>
-    </div><div className="floating-chip chip-top"><span className="chip-icon chip-js">JS</span><span><b>Web development</b><small>Build one skill at a time</small></span><span className="chip-check">✓</span></div><div className="floating-chip chip-bottom"><span className="chip-icon chip-dsa"><Code2 size={16}/></span><span><b>Problem solving</b><small>Learn the core concepts</small></span><span className="chip-bars"><i/><i/><i/><i/></span></div>
-  </div></div><div className="hero-footnote"><span>YOUR LEARNING PATHS</span><a href="#roadmaps">Explore the curriculum <ArrowRight size={13}/></a></div></section>;
+  </div><div className="hero-art"><div className="learning-preview">
+    <div className="learning-preview-heading"><div><span className="learning-preview-kicker">EXPLORE THE CURRICULUM</span><h2>Choose a learning path</h2></div><Layers3 size={18}/></div>
+    {loading ? <div className="learning-preview-empty" role="status">Loading published learning paths…</div> : error ? <div className="learning-preview-empty" role="status">Learning paths could not be loaded. Try again below.</div> : featuredRoadmaps.length ? <div className="learning-preview-list">{featuredRoadmaps.map(roadmap => <Link className="learning-preview-path" to={`/${roadmap.slug}`} key={roadmap._id}>
+      <div className="learning-preview-path-heading"><span className="learning-preview-icon">{roadmap.type === "dsa" ? <Layers3 size={16}/> : <Code2 size={16}/>}</span><span><small>{roadmap.pathType || "LEARNING PATH"}</small><strong>{roadmap.title}</strong></span><ArrowRight size={15}/></div>
+      {roadmap.description && <p>{roadmap.description}</p>}
+      {roadmap.topics?.length > 0 && <ol>{roadmap.topics.slice(0, 3).map((topic, index) => <li key={topic._id}><span>{String(index + 1).padStart(2, "0")}</span><span>{topic.title}</span>{typeof topic.itemCount === "number" && <small>{topic.itemCount} items</small>}</li>)}</ol>}
+      <span className="learning-preview-meta">{roadmap.topics?.length ? `${roadmap.topics.length} topics` : ""}{roadmap.topics?.length && roadmap.topics.some(topic => typeof topic.itemCount === "number") ? " · " : ""}{roadmap.topics?.some(topic => typeof topic.itemCount === "number") ? `${roadmap.topics.reduce((sum, topic) => sum + (topic.itemCount || 0), 0)} learning items` : ""}</span>
+    </Link>)}</div> : <div className="learning-preview-empty">Published learning paths will appear here.</div>}
+  </div></div></div><div className="hero-footnote"><span>YOUR LEARNING PATHS</span><a href="#roadmaps">Explore the curriculum <ArrowRight size={13}/></a></div></section>;
 }
 
 function RoadmapCard({ roadmap, completed, user, index, kicker, tagline, icon }) {
