@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const { data } = await api.get("/auth/me");
+      const { data } = await api.get("/auth/me", { headers: { "Cache-Control": "no-cache" } });
       setUser(data.data.user);
       return data.data.user;
     } catch {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     try {
       const guestProgress = loadGuestProgress();
       await api.post(`/auth/${mode}`, { ...values, guestProgress });
-      const { data } = await api.get("/auth/me");
+      const { data } = await api.get("/auth/me", { headers: { "Cache-Control": "no-cache" } });
       if (!data.data.user) {
         throw new Error("Your account was accepted, but this browser did not save the sign-in session. Please allow cookies for this site and try again.");
       }

@@ -77,7 +77,7 @@ The API test suite includes database-backed authentication, progress synchroniza
 
 Deploy `client/` as a Vercel project and `server/` as a Node service. Set the API service root directory to `server/`, then use `npm install` as the build command and `npm start` as the start command. Its health check path is `/health`. Set the Vercel project root directory to `client/`, use `npm install` and `npm run build`, and publish `dist/`.
 
-The production client uses the same-origin `/api` path. `client/vercel.json` rewrites those requests to the Render API, so session cookies remain first-party to the Vercel site and do not depend on browsers allowing cross-site cookies. When changing the backend hostname, update the rewrite destination in `client/vercel.json` and redeploy the frontend. `VITE_API_URL` is used only for local development; do not set it to the Render URL in Vercel.
+The production client uses the same-origin `/api` path. The Vercel function in `client/api/` forwards API requests and session cookies to Render, and rewrites returned session cookies as secure, host-only Vercel cookies. This avoids reliance on browsers allowing cross-site cookies. When changing the backend hostname, update the proxy destination in `client/api/[...path].js` and redeploy the frontend. `VITE_API_URL` is used only for local development; do not set it to the Render URL in Vercel.
 
 On the server, configure `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, and `NODE_ENV=production`. Set `CLIENT_URL` to the exact Vercel origin (without a trailing slash). The session cookie is HTTP-only, secure in production, and uses `SameSite=Lax` by default. Leave `COOKIE_DOMAIN` unset when using the Vercel API rewrite. Configure TLS at the hosting platform or reverse proxy.
 
